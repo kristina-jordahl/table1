@@ -23,26 +23,27 @@ Table1 <- function(data, variables, outcome) {
     if (class(data[, v]) == "factor") {
       count <- table(data[, v], data[, outcome], useNA="ifany")
       prop <- prop.table(table(data[, v], data[, outcome], useNA="ifany"), 2)
-      table1 <- matrix(NA, nrow=(dim(count)[1]+1), ncol=3)
+      table1 <- matrix(NA, nrow=(dim(count)[1]+1), ncol=(dim(count)[2]+1))
       
       colnames(table1) <- c("", colnames(count))
       rownames(count)[is.na(rownames(count))] <- "Missing"
       table1[, 1] <- c(paste0(v, " (N, %)"), paste0("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", rownames(count)))
-      table1[1, 2:3] <- c("", "")
+      table1[1, 2:(dim(count)[2]+1)] <- rep("", dim(count)[2])
       
       for (i in 1:dim(count)[1]) {
-        for (ii in 1:2) {
+        for (ii in 1:dim(count)[2]) {
           table1[i+1, ii+1] <- paste0(count[i, ii], " (", round(prop[i, ii], 2) * 100, "%)")
         }
       }
     }
     if (class(data[, v]) %in% c("integer", "numeric")) {
-      table1 <- matrix(NA, nrow=1, ncol=3)
+      temp1 <- aggregate(data[, v], list(data[, outcome]), mean)
+      temp2 <- aggregate(data[, v], list(data[, outcome]), sd)
+      table1 <- matrix(NA, nrow=1, ncol=(length(temp1$Group.1)+1))
       table1[1, 1] <- paste0(v, " (mean, SD)")
-      table1[1, 2] <- paste0(round(mean(data[data[, outcome] == "Cases", v]), 2), " (", round(sd(data[data[, outcome] == "Cases", v]), 2), ")")
-      table1[1, 3] <- paste0(round(mean(data[data[, outcome] == "Controls", v]), 2), " (", round(sd(data[data[, outcome] == "Controls", v]), 2), ")")
+      colnames(table1) <- c("", as.character(temp1$Group.1))
+      table1[1, 2:(length(temp1$Group.1)+1)] <- paste0(round(temp1$x, 2), " (", round(temp2$x, 2), ")")
     }
-    colnames(table1) <- c("", names(table(cars$outcome)))
     final.table1 <- rbind(final.table1, table1)
   }
   table1 <<- final.table1
